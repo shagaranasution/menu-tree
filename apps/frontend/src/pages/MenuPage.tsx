@@ -7,15 +7,28 @@ import { useMenus } from '../hooks/useMenus';
 import AddMenuModal from '../components/AddMenuModal';
 import type { MenuItem } from '../types';
 import EditMenuModal from '../components/EditMenuModal';
+import SearchableSelect from '../components/SearchableSelect';
 import DeleteMenuConfirmModal from '../components/DeleteMenuConfirmModal';
 import MenuDetailForm from '../components/MenuDetailForm';
 import { buildTree } from '../utils/tree';
+
+import type { Option } from '../components/SearchableSelect';
 
 const initialFormValue: MenuItem = {
   id: '',
   depth: 0,
   parentId: '',
   title: '',
+};
+
+const items: Option[] = [
+  { value: '1', label: 'System Management' },
+  { value: '2', label: 'About Us' },
+  { value: '3', label: 'Products' },
+];
+
+const buildMenuSelectOption = (items: MenuItem[]): Option[] => {
+  return items.map((item) => ({ value: item.id, label: item.title }));
 };
 
 export default function MenuPage() {
@@ -31,6 +44,15 @@ export default function MenuPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  const [selectedMenuOption, setSelectedMenuOption] = useState<string | null>(
+    null
+  );
+
+  const menuSelectOptions = useMemo(
+    () => buildMenuSelectOption(menus),
+    [menus]
+  );
 
   const handleAddChild = (item: MenuItem) => {
     setParentMenu(item);
@@ -129,10 +151,11 @@ export default function MenuPage() {
       {/* Menu Selector */}
       <div className="mb-6 max-w-xs">
         <label className="block text-sm font-medium mb-1">Menu</label>
-        <button className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between text-gray-700">
-          <span>system management</span>
-          <ChevronDown size={20} />
-        </button>
+        <SearchableSelect
+          options={menuSelectOptions}
+          value={selectedMenuOption}
+          onChange={setSelectedMenuOption}
+        />
       </div>
 
       {/* Main Layout */}
