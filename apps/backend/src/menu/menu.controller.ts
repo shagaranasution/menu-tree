@@ -13,11 +13,14 @@ import {
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto';
 import { UpdateMenuDto } from './dto';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('menus')
 @Controller('api/menus')
 export class MenuController {
   constructor(private readonly svc: MenuService) {}
 
+  @ApiOperation({ summary: 'Get all menus as tree' })
   @Get()
   async getAll() {
     return this.svc.findAllTree();

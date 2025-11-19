@@ -1,13 +1,4 @@
 .DS_Store
 
-/dist
-/node_modules
-/build
-
-/docker/postgres/data
-
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+/docker/postgres/data/*
+!/docker/postgres/data/.gitkeep

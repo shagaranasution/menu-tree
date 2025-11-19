@@ -1,0 +1,34 @@
+import { useEffect, useState } from 'react';
+import type { MenuItem } from '../types';
+
+export function useMenus() {
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function fetchMenus() {
+    try {
+      const res = await fetch('http://localhost:3001/api/menus');
+
+      if (!res.ok) throw new Error('Failed to fetch menus');
+
+      const data = await res.json();
+
+      setMenus(data);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchMenus();
+  }, []);
+
+  const refetch = async () => {
+    await fetchMenus();
+  };
+
+  return { menus, loading, error, refetch };
+}
