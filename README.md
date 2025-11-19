@@ -7,21 +7,24 @@ A full-stack project built with **NestJS**, **React (Vite)**, and **PostgreSQL**
 ## 🚀 Tech Stack
 
 ### Frontend
-* **React** (Vite)
-* **TypeScript**
-* **TailwindCSS**
+
+- **React** (Vite)
+- **TypeScript**
+- **TailwindCSS**
 
 ### Backend
-* **NestJS**
-* **TypeScript**
-* **PostgreSQL** (via Docker)
-* **Prisma**
-* **Swagger** for API documentation
+
+- **NestJS**
+- **TypeScript**
+- **PostgreSQL** (via Docker)
+- **Prisma**
+- **Swagger** for API documentation
 
 ### Development Tools
-* **Docker** & **Docker Compose**
-* **Node.js** (v18+ recommended)
-* `pnpm` / `npm` / `yarn`
+
+- **Docker** & **Docker Compose**
+- **Node.js** (v18+ recommended)
+- `pnpm` / `npm` / `yarn`
 
 ---
 
@@ -43,7 +46,7 @@ A full-stack project built with **NestJS**, **React (Vite)**, and **PostgreSQL**
 ## 🛠️ Local Development
 
 1. Clone the repository
-   
+
 ```bash
 git clone https://github.com/shagaranasution/menu-tree.git
 cd menu-tree
@@ -54,7 +57,8 @@ cd menu-tree
 ## 🗄️ Database Setup (PostgreSQL via Docker)
 
 1. Create a .env file
-Create a .env file in the project root:
+   Create a .env file in the project root:
+
 ```bash
 # .env
 POSTGRES_USER=YOUR_POSTGRES_USER
@@ -80,7 +84,8 @@ npm install
 ```
 
 2. Configure environment
-Create apps/backend/.env:
+   Create apps/backend/.env:
+
 ```bash
 # .env
 PORT=3001
@@ -92,10 +97,12 @@ DATABASE_URL=YOUR_DB_CONNECTION_STRING
 ```bash
 npm run start:dev
 ```
+
 API will run at http://localhost:3001
 
 4. Swagger Documentation
-After starting the server:
+   After starting the server:
+
 ```bash
 http://localhost:3001/api/docs
 ```
@@ -105,33 +112,37 @@ http://localhost:3001/api/docs
 ## 🎨 Frontend (React + Vite)
 
 1. Install dependencies
+
 ```bash
 cd apps/frontend
 npm install
 ```
 
 2. Configure .env
-Create apps/frontend/.env:
+   Create apps/frontend/.env:
+
 ```bash
-VITE_BACKEND_PORT=3001
-VITE_BACKEND_HOST=http://localhost
+VITE_BACKEND_URL=http://localhost:3001
 ```
 
 4. Run dev server
-npm run dev
-Frontend UI will be available at http://localhost:5173
+   npm run dev
+   Frontend UI will be available at http://localhost:5173
 
 ---
 
 ## 📜 Scripts
 
 Backend (/apps/backend)
+
 ```bash
 npm run start:dev     # Start backend in watch mode
 npm run build         # Build backend
 npm run start:prod    # Start production server
 ```
+
 Frontend (/apps/frontend)
+
 ```bash
 npm run dev           # Start Vite dev server
 npm run build         # Build production client
@@ -141,7 +152,6 @@ npm run preview       # Preview production build
 ---
 
 ## Screenshots
+
 ![Desktop Screen](./screenshots/ss_1.png)\
 ![Mobile Screen](./screenshots/ss_2.png)
-
-
