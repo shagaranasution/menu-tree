@@ -15,7 +15,7 @@ A full-stack project built with **NestJS**, **React (Vite)**, and **PostgreSQL**
 * **NestJS**
 * **TypeScript**
 * **PostgreSQL** (via Docker)
-* **Prisma** or **TypeORM** (adjust if needed)
+* **Prisma**
 * **Swagger** for API documentation
 
 ### Development Tools
