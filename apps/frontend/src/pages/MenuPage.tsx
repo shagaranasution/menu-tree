@@ -1,34 +1,22 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-
 import MenuTree from '../components/MenuTree';
 import MenuTreeSkeleton from '../components/MenuTreeSkeleton';
 import { useMenus } from '../hooks/useMenus';
 import AddMenuModal from '../components/AddMenuModal';
-import type { MenuItem } from '../types';
 import EditMenuModal from '../components/EditMenuModal';
 import SearchableSelect from '../components/SearchableSelect';
 import DeleteMenuConfirmModal from '../components/DeleteMenuConfirmModal';
-import MenuDetailForm from '../components/MenuDetailForm';
-import { buildTree } from '../utils/tree';
+import { buildMenuSelectOption, buildTree } from '../utils';
 
-import type { Option } from '../components/SearchableSelect';
+import type { MenuItem } from '../types';
+import MenuDetailForm, {
+  type OnFormChangeParams,
+} from '../components/MenuDetailForm';
 
 const initialFormValue: MenuItem = {
   id: '',
-  depth: 0,
   parentId: '',
   title: '',
-};
-
-const items: Option[] = [
-  { value: '1', label: 'System Management' },
-  { value: '2', label: 'About Us' },
-  { value: '3', label: 'Products' },
-];
-
-const buildMenuSelectOption = (items: MenuItem[]): Option[] => {
-  return items.map((item) => ({ value: item.id, label: item.title }));
 };
 
 export default function MenuPage() {
@@ -117,10 +105,7 @@ export default function MenuPage() {
     refreshMenus();
   };
 
-  const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleFormChange = ({ name, value }: OnFormChangeParams) => {
     setFormValue((prev) => ({
       ...prev,
       [name]: value,
@@ -135,6 +120,29 @@ export default function MenuPage() {
     } else {
       handleSubmitCreation(formValue);
     }
+  };
+
+  const handleMenuSelectChange = async (value: string | null) => {
+    setSelectedMenuOption(value);
+    if (value) {
+      try {
+        const menu = await fethMenuById(value);
+
+        setFormValue(menu);
+      } catch (err) {
+        console.error((err as Error).message);
+      }
+    }
+  };
+
+  const fethMenuById = async (id: string): Promise<MenuItem> => {
+    const res = await fetch(`http://localhost:3001/api/menus/${id}`);
+
+    if (!res.ok) throw new Error('Fail to fetch menu data');
+
+    const data = (await res.json()) as MenuItem;
+
+    return data;
   };
 
   return (
@@ -154,7 +162,7 @@ export default function MenuPage() {
         <SearchableSelect
           options={menuSelectOptions}
           value={selectedMenuOption}
-          onChange={setSelectedMenuOption}
+          onChange={handleMenuSelectChange}
         />
       </div>
 
@@ -193,7 +201,7 @@ export default function MenuPage() {
           <MenuDetailForm
             item={formValue}
             allMenus={menus}
-            onChange={handleFormChange}
+            onFormChange={handleFormChange}
             onSubmit={handleFormSubmit}
             onDelete={() => {
               handleDelete(formValue);

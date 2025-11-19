@@ -37,17 +37,23 @@ export default function SearchableSelect({
     opt.label.toLowerCase().includes(query.trim().toLowerCase())
   );
 
-  // currently selected option
   const selected = options.find((o) => o.value === value) ?? null;
 
   useEffect(() => {
+    let raf = 0;
     if (open) {
-      setHighlightIndex(0);
-      // focus search input after a frame so the dropdown has been painted
-      requestAnimationFrame(() => inputRef.current?.focus());
+      raf = requestAnimationFrame(() => {
+        setHighlightIndex(0);
+        inputRef.current?.focus();
+      });
     } else {
-      setQuery('');
+      raf = requestAnimationFrame(() => {
+        setQuery('');
+      });
     }
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [open]);
 
   // close when clicking outside

@@ -10,7 +10,7 @@ export function useMenus() {
     try {
       const res = await fetch('http://localhost:3001/api/menus');
 
-      if (!res.ok) throw new Error('Failed to fetch menus');
+      if (!res.ok) throw new Error('Fail to fetch menus data');
 
       const data = await res.json();
 

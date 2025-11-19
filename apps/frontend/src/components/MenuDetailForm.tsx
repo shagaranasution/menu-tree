@@ -1,20 +1,24 @@
+import { useMemo } from 'react';
+import { buildMenuSelectOption } from '../utils';
+import SearchableSelect from './SearchableSelect';
+
 import type { MenuItem } from '../types';
 
-interface MenuDetailFormProps {
+export type OnFormChangeParams = { name: string; value: string };
+
+type MenuDetailFormProps = {
   item: MenuItem;
   allMenus: MenuItem[];
-  onChange?: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => void;
+  onFormChange?: (val: OnFormChangeParams) => void;
   onSubmit?: () => void;
   onDelete?: () => void;
   onResetForm?: () => void;
-}
+};
 
 export default function MenuDetailForm({
   item,
   allMenus,
-  onChange,
+  onFormChange,
   onSubmit,
   onDelete,
   onResetForm,
@@ -24,7 +28,10 @@ export default function MenuDetailForm({
     onSubmit?.();
   };
 
-  const depth = item?.depth ?? 0;
+  const menuSelectOptions = useMemo(
+    () => buildMenuSelectOption(allMenus),
+    [allMenus]
+  );
 
   return (
     <div className="space-y-6">
@@ -43,35 +50,19 @@ export default function MenuDetailForm({
         </div>
 
         <div>
-          <label htmlFor="depth" className="block text-sm text-gray-600 mb-1">
-            Depth
-          </label>
-          <input
-            readOnly
-            name="depth"
-            value={depth}
-            className="w-full bg-gray-100 text-gray-600 px-4 py-3 rounded-xl cursor-not-allowed"
-          />
-        </div>
-
-        <div>
           <label
             htmlFor="parentId"
             className="block text-sm text-gray-600 mb-1">
             Parent
           </label>
-          <select
-            name="parentId"
+
+          <SearchableSelect
+            options={menuSelectOptions}
             value={item.parentId ?? ''}
-            className="w-full border border-gray-400 p-2 rounded bg-white"
-            onChange={onChange}>
-            <option value="">No Parent (Root)</option>
-            {allMenus.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.title}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => {
+              onFormChange?.({ name: 'parentId', value: value || '' });
+            }}
+          />
         </div>
 
         <div>
@@ -82,22 +73,24 @@ export default function MenuDetailForm({
             name="title"
             value={item.title}
             placeholder="Menu Name"
-            className="w-full bg-gray-100 text-gray-600 px-4 py-3 rounded-xl"
-            onChange={onChange}
+            className="w-full bg-white px-4 py-3 border border-gray-200 rounded-xl focus:outline-none"
+            onChange={(e) =>
+              onFormChange?.({ name: e.target.name, value: e.target.value })
+            }
           />
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <button
             type="submit"
-            className="w-full lg:w-auto px-8 py-3 bg-blue-800 text-white rounded-full font-medium">
+            className="w-auto sm:w-[98px] px-8 py-3 bg-blue-800 text-white rounded-full font-medium">
             {item.id ? 'Save' : 'Add'}
           </button>
 
           <button
             type="button"
             onClick={onResetForm}
-            className="w-full lg:w-auto px-8 py-3 bg-white border border-gray-400 rounded-full font-medium">
+            className="px-8 py-3 bg-white border border-gray-400 rounded-full font-medium">
             Reset
           </button>
 
@@ -105,7 +98,7 @@ export default function MenuDetailForm({
             <button
               type="button"
               onClick={onDelete}
-              className="w-full lg:w-auto px-8 py-3 bg-red-600 text-white border rounded-full font-medium">
+              className="px-8 py-3 bg-red-600 text-white border rounded-full font-medium">
               Delete
             </button>
           )}
