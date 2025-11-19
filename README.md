@@ -138,6 +138,10 @@ npm run build         # Build production client
 npm run preview       # Preview production build
 ```
 
+---
 
+## Screenshots
+![Desktop Screen](./screenshots/ss_1.png)\
+![Mobile Screen](./screenshots/ss_2.png)
 
 
