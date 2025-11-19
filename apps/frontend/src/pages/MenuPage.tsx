@@ -213,7 +213,10 @@ export default function MenuPage() {
           {error && (
             <div className="text-red-600">Failed to load menu data.</div>
           )}
-          {menus.length > 0 && (
+          {!loading && menus.length === 0 && (
+            <p>There is no created menu yet. You can create one using form.</p>
+          )}
+          {!loading && menus.length > 0 && (
             <MenuTree
               data={menuTree}
               expandedIds={expandedIds}
