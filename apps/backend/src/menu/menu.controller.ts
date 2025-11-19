@@ -7,8 +7,6 @@ import {
   Param,
   Put,
   Delete,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto';
@@ -32,13 +30,11 @@ export class MenuController {
   }
 
   @Post()
-  @UsePipes(new ValidationPipe({ transform: true }))
   async create(@Body() dto: CreateMenuDto) {
     return this.svc.create(dto);
   }
 
   @Put(':id')
-  @UsePipes(new ValidationPipe({ transform: true }))
   async update(@Param('id') id: string, @Body() dto: UpdateMenuDto) {
     return this.svc.update(id, dto);
   }

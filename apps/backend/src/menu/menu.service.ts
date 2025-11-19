@@ -45,30 +45,7 @@ export class MenuService {
       orderBy: [{ parentId: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }],
     });
 
-    const map = new Map<string, MenuTree>();
-    const roots: MenuTree[] = [];
-
-    for (const item of items) {
-      map.set(item.id, { ...item, children: [] });
-    }
-
-    for (const item of items) {
-      const node = map.get(item.id) || ({} as MenuTree);
-
-      if (item.parentId) {
-        const parent = map.get(item.parentId);
-
-        if (parent) {
-          parent.children?.push(node);
-        } else {
-          roots.push(node);
-        }
-      } else {
-        roots.push(node);
-      }
-    }
-
-    return roots;
+    return items;
   }
 
   private getDescendantIds(all: MenuTree[], id: string) {
@@ -130,9 +107,6 @@ export class MenuService {
   }
 
   async remove(id: string) {
-    // Because of referential onDelete: Cascade, deleting parent will remove children at DB level.
-    // But Prisma may complain if children reference; cascade is supported by relation in schema.
-    // Use delete many to be safe or delete single record (will cascade).
     try {
       await this.prisma.menu.delete({ where: { id } });
       return { success: true };

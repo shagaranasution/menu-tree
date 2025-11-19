@@ -5,7 +5,7 @@ type AddMenuModalProps = {
   open: boolean;
   parentMenu: MenuItem | null;
   onClose: () => void;
-  onSubmit: (data: { title: string; description: string | null }) => void;
+  onSubmit: (data: { title: string }) => void;
 };
 
 export default function AddMenuModal({
@@ -15,7 +15,6 @@ export default function AddMenuModal({
   onSubmit,
 }: AddMenuModalProps) {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
 
   if (!open) return null;
 
@@ -30,16 +29,10 @@ export default function AddMenuModal({
           <input
             type="text"
             className="w-full border p-2 rounded"
-            placeholder="Menu Title"
+            placeholder="Menu Name"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-
-          <textarea
-            className="w-full border p-2 rounded"
-            placeholder="Description (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}></textarea>
 
           <div className="flex justify-end gap-3">
             <button
@@ -52,12 +45,11 @@ export default function AddMenuModal({
             </button>
 
             <button
-              className="px-4 py-2 rounded bg-blue-600 text-white"
+              className="px-4 py-2 rounded bg-blue-800 text-white"
               onClick={() => {
                 setTitle('');
                 onSubmit({
                   title,
-                  description: description || null,
                 });
               }}>
               Add

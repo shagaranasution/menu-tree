@@ -5,7 +5,7 @@ interface Props {
   open: boolean;
   item: MenuItem | null;
   onClose: () => void;
-  onSubmit: (data: { title: string; description: string | null }) => void;
+  onSubmit: (data: Omit<MenuItem, 'id'>) => void;
 }
 
 export default function EditMenuModal({
@@ -15,13 +15,11 @@ export default function EditMenuModal({
   onSubmit,
 }: Props) {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
 
   useEffect(() => {
     if (item) {
       const id = setTimeout(() => {
         setTitle(item.title);
-        setDescription(item.description || '');
       }, 0);
       return () => clearTimeout(id);
     }
@@ -38,16 +36,10 @@ export default function EditMenuModal({
           <input
             type="text"
             className="w-full border p-2 rounded"
-            placeholder="Menu Title"
+            placeholder="Menu Name"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-
-          <textarea
-            className="w-full border p-2 rounded"
-            placeholder="Description (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}></textarea>
 
           <div className="flex justify-end gap-3">
             <button className="px-4 py-2 rounded bg-gray-200" onClick={onClose}>
@@ -55,11 +47,10 @@ export default function EditMenuModal({
             </button>
 
             <button
-              className="px-4 py-2 rounded bg-blue-600 text-white"
+              className="px-4 py-2 rounded bg-blue-800 text-white"
               onClick={() =>
                 onSubmit({
                   title,
-                  description: description || null,
                 })
               }>
               Save Changes

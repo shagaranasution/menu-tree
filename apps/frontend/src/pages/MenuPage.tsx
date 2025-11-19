@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import MenuTree from '../components/MenuTree';
@@ -8,14 +8,21 @@ import AddMenuModal from '../components/AddMenuModal';
 import type { MenuItem } from '../types';
 import EditMenuModal from '../components/EditMenuModal';
 import DeleteMenuConfirmModal from '../components/DeleteMenuConfirmModal';
+import MenuDetailForm from '../components/MenuDetailForm';
+import { buildTree } from '../utils/tree';
 
-type MenuForm = {
-  title: string;
-  description: string | null;
+const initialFormValue: MenuItem = {
+  id: '',
+  depth: 0,
+  parentId: '',
+  title: '',
 };
 
 export default function MenuPage() {
   const { menus, loading, error, refetch: refreshMenus } = useMenus();
+  const menuTree = useMemo(() => buildTree(menus), [menus]);
+
+  const [formValue, setFormValue] = useState<MenuItem>(initialFormValue);
 
   const [parentMenu, setParentMenu] = useState<MenuItem | null>(null);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
@@ -30,14 +37,13 @@ export default function MenuPage() {
     setAddModalOpen(true);
   };
 
-  const handleSubmit = async (data: MenuForm) => {
+  const handleSubmitCreation = async (data: Omit<MenuItem, 'id'>) => {
     await fetch('http://localhost:3001/api/menus', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: data.title,
-        description: data.description,
-        parentId: parentMenu?.id,
+        parentId: data.parentId || parentMenu?.id,
         order: 0,
       }),
     });
@@ -46,16 +52,23 @@ export default function MenuPage() {
     refreshMenus();
   };
 
+  const handleMenuSelect = (item: MenuItem) => {
+    setEditItem(null);
+    setFormValue(item);
+  };
+
   const handleEdit = (item: MenuItem) => {
-    console.log('handle edit:', item);
+    setFormValue(initialFormValue);
     setEditItem(item);
     setEditModalOpen(true);
   };
 
-  const submitEdit = async (data: MenuForm) => {
-    if (!editItem) return;
+  const submitEdit = async (data: Omit<MenuItem, 'id'>) => {
+    const id = editItem?.id || formValue.id;
 
-    await fetch(`http://localhost:3001/api/menus/${editItem.id}`, {
+    if (!id) return;
+
+    await fetch(`http://localhost:3001/api/menus/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -78,7 +91,28 @@ export default function MenuPage() {
     });
 
     setDeleteModalOpen(false);
+    setFormValue(initialFormValue);
     refreshMenus();
+  };
+
+  const handleFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormValue((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFormSubmit = () => {
+    setFormValue(initialFormValue);
+    // Do update as selected item is provided, if not do post instead
+    if (formValue.id !== '') {
+      submitEdit(formValue);
+    } else {
+      handleSubmitCreation(formValue);
+    }
   };
 
   return (
@@ -117,11 +151,13 @@ export default function MenuPage() {
           </div>
 
           {loading && <MenuTreeSkeleton />}
-          {error && <div className="text-red-600">Failed to load menus.</div>}
+          {error && (
+            <div className="text-red-600">Failed to load menu data.</div>
+          )}
           {menus.length > 0 && (
             <MenuTree
-              data={menus}
-              onSelect={(item) => console.log('selected', item)}
+              data={menuTree}
+              onSelect={handleMenuSelect}
               onAddChild={handleAddChild}
               onEdit={handleEdit}
               onDelete={handleDelete}
@@ -131,54 +167,18 @@ export default function MenuPage() {
 
         {/* Right: Form Section */}
         <div className="lg:w-1/2">
-          <div className="space-y-6">
-            {/* Menu ID */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Menu ID
-              </label>
-              <input
-                readOnly
-                className="w-full bg-gray-100 text-gray-600 px-4 py-3 rounded-xl"
-                placeholder="Generated automatically"
-              />
-            </div>
-
-            {/* Depth */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Depth</label>
-              <input
-                readOnly
-                className="w-full bg-gray-100 text-gray-600 px-4 py-3 rounded-xl"
-                placeholder="—"
-              />
-            </div>
-
-            {/* Parent Data */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Parent Data
-              </label>
-              <input
-                className="w-full bg-white border border-gray-200 px-4 py-3 rounded-xl"
-                placeholder="—"
-              />
-            </div>
-
-            {/* Name */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Name</label>
-              <input
-                className="w-full bg-white border border-gray-200 px-4 py-3 rounded-xl"
-                placeholder="—"
-              />
-            </div>
-
-            {/* Save Button */}
-            <button className="w-full lg:w-auto px-8 py-3 bg-blue-600 text-white rounded-xl font-medium">
-              Save
-            </button>
-          </div>
+          <MenuDetailForm
+            item={formValue}
+            allMenus={menus}
+            onChange={handleFormChange}
+            onSubmit={handleFormSubmit}
+            onDelete={() => {
+              handleDelete(formValue);
+            }}
+            onResetForm={() => {
+              setFormValue(initialFormValue);
+            }}
+          />
         </div>
       </div>
 
@@ -186,14 +186,18 @@ export default function MenuPage() {
         open={addModalOpen}
         parentMenu={parentMenu}
         onClose={() => setAddModalOpen(false)}
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmitCreation}
       />
 
       <EditMenuModal
         open={editModalOpen}
         item={editItem}
         onClose={() => setEditModalOpen(false)}
-        onSubmit={submitEdit}
+        onSubmit={(item) => {
+          if (editItem) {
+            submitEdit(item);
+          }
+        }}
       />
 
       <DeleteMenuConfirmModal
