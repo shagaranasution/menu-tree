@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { MenuItem } from '../types';
 
+const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
 export function useMenus() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -8,7 +10,7 @@ export function useMenus() {
 
   async function fetchMenus() {
     try {
-      const res = await fetch('http://localhost:3001/api/menus');
+      const res = await fetch(`${baseUrl}/api/menus`);
 
       if (!res.ok) throw new Error('Fail to fetch menus data');
 
