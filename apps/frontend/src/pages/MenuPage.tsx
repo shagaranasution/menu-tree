@@ -145,6 +145,30 @@ export default function MenuPage() {
     return data;
   };
 
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function collectAllIds(menus: MenuItem[]): string[] {
+    const result: string[] = [];
+
+    function walk(list: MenuItem[]) {
+      for (const item of list) {
+        result.push(item.id);
+        if (item.children?.length) walk(item.children);
+      }
+    }
+
+    walk(menus);
+    return result;
+  }
+
+  function expandAll(allMenuIds: string[]) {
+    setExpandedIds(new Set(allMenuIds));
+  }
+
+  function collapseAll() {
+    setExpandedIds(new Set());
+  }
+
   return (
     <div className="w-full min-h-screen bg-white p-6 lg:p-10">
       {/* Breadcrumb */}
@@ -172,11 +196,15 @@ export default function MenuPage() {
         <div className="lg:w-1/2">
           {/* Action Buttons */}
           <div className="flex items-center gap-4 mb-4">
-            <button className="px-4 py-2 rounded-full bg-gray-900 text-white text-sm">
+            <button
+              className="px-4 py-2 rounded-full bg-gray-900 text-white text-sm"
+              onClick={() => expandAll(collectAllIds(menuTree))}>
               Expand All
             </button>
 
-            <button className="px-4 py-2 rounded-full bg-white border text-gray-700 text-sm">
+            <button
+              className="px-4 py-2 rounded-full bg-white border text-gray-700 text-sm"
+              onClick={collapseAll}>
               Collapse All
             </button>
           </div>
@@ -188,6 +216,15 @@ export default function MenuPage() {
           {menus.length > 0 && (
             <MenuTree
               data={menuTree}
+              expandedIds={expandedIds}
+              onExpand={(id) => {
+                setExpandedIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(id)) next.delete(id);
+                  else next.add(id);
+                  return next;
+                });
+              }}
               onSelect={handleMenuSelect}
               onAddChild={handleAddChild}
               onEdit={handleEdit}

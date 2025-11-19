@@ -6,12 +6,13 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMenuDto, UpdateMenuDto } from './dto';
 import type { MenuTree } from './menu.types';
+import { MenuEntity } from './menu.entity';
 
 @Injectable()
 export class MenuService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateMenuDto) {
+  async create(dto: CreateMenuDto): Promise<MenuEntity> {
     if (dto.parentId) {
       const parent = await this.prisma.menu.findUnique({
         where: { id: dto.parentId },
@@ -32,7 +33,7 @@ export class MenuService {
     return menu;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<MenuEntity> {
     const menu = await this.prisma.menu.findUnique({ where: { id } });
 
     if (!menu) throw new NotFoundException('Menu not found');
@@ -40,7 +41,7 @@ export class MenuService {
     return menu;
   }
 
-  async findAllTree() {
+  async findAllTree(): Promise<MenuEntity[]> {
     const items = await this.prisma.menu.findMany({
       orderBy: [{ parentId: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }],
     });
@@ -75,7 +76,7 @@ export class MenuService {
     return out;
   }
 
-  async update(id: string, dto: UpdateMenuDto) {
+  async update(id: string, dto: UpdateMenuDto): Promise<MenuEntity> {
     const existing = await this.prisma.menu.findUnique({ where: { id } });
 
     if (!existing) throw new NotFoundException('Menu not found');

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -10,6 +9,8 @@ import type { MenuItem } from '../types';
 
 type MenuTreeProps = {
   data: MenuItem[];
+  expandedIds: Set<string>;
+  onExpand: (id: string) => void;
   onSelect?: (item: MenuItem) => void;
   onAddChild?: (parent: MenuItem) => void;
   onEdit?: (item: MenuItem) => void;
@@ -18,6 +19,9 @@ type MenuTreeProps = {
 
 export default function MenuTree({
   data,
+  // isExpanded,
+  expandedIds,
+  onExpand,
   onSelect,
   onAddChild,
   onEdit,
@@ -29,6 +33,8 @@ export default function MenuTree({
         <TreeNode
           key={item.id}
           item={item}
+          expandedIds={expandedIds}
+          onExpand={onExpand}
           onSelect={onSelect}
           onAddChild={onAddChild}
           onEdit={onEdit}
@@ -41,6 +47,9 @@ export default function MenuTree({
 
 type TreeNodeProps = {
   item: MenuItem;
+  // isExpanded: boolean;
+  expandedIds: Set<string>;
+  onExpand: (id: string) => void;
   onSelect?: (item: MenuItem) => void;
   onAddChild?: (parent: MenuItem) => void;
   onEdit?: (item: MenuItem) => void;
@@ -49,23 +58,29 @@ type TreeNodeProps = {
 
 function TreeNode({
   item,
+  expandedIds,
+  onExpand,
   onSelect,
   onAddChild,
   onEdit,
   onDelete,
 }: TreeNodeProps) {
-  const [expanded, setExpanded] = useState(true);
-
   const hasChildren = item.children && item.children.length > 0;
+
+  const isExpanded = expandedIds.has(item.id);
 
   return (
     <div className="select-none">
       <div className="flex items-center gap-2 group">
         {hasChildren ? (
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => onExpand(item.id)}
             className="w-4 h-4 flex items-center justify-center">
-            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            {isExpanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
           </button>
         ) : (
           <div className="w-4"></div>
@@ -107,12 +122,14 @@ function TreeNode({
         </div>
       </div>
 
-      {expanded && hasChildren && (
+      {isExpanded && hasChildren && (
         <div className="ml-6 border-l border-gray-300 pl-4 mt-1">
           {item.children?.map((child) => (
             <TreeNode
               key={child.id}
               item={child}
+              expandedIds={expandedIds}
+              onExpand={onExpand}
               onSelect={onSelect}
               onAddChild={onAddChild}
               onEdit={onEdit}
