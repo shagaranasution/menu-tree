@@ -9,7 +9,7 @@ async function bootstrap() {
     .map((o) => o.trim())
     .filter((o) => o.length > 0);
 
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
 
   app.enableCors({
     origin: allowedOrigins,
