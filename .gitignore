@@ -1,5 +1,7 @@
 .DS_Store
 
+/node_modules
+
 /docker/postgres/data/*
 !/docker/postgres/data/.gitkeep
 
