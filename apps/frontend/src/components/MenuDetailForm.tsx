@@ -42,6 +42,7 @@ export default function MenuDetailForm({
           </label>
           <input
             readOnly
+            id="id"
             name="id"
             value={item.id ?? ''}
             className="w-full bg-gray-100 text-gray-600 px-4 py-3 rounded-xl cursor-not-allowed"
@@ -50,11 +51,7 @@ export default function MenuDetailForm({
         </div>
 
         <div>
-          <label
-            htmlFor="parentId"
-            className="block text-sm text-gray-600 mb-1">
-            Parent
-          </label>
+          <label className="block text-sm text-gray-600 mb-1">Parent</label>
 
           <SearchableSelect
             options={menuSelectOptions}
@@ -70,6 +67,7 @@ export default function MenuDetailForm({
             Name
           </label>
           <input
+            id="title"
             name="title"
             value={item.title}
             placeholder="Menu Name"
