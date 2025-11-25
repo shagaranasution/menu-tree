@@ -56,7 +56,6 @@ export default function MenuPage() {
       body: JSON.stringify({
         title: data.title,
         parentId: data.parentId || parentMenu?.id,
-        order: 0,
       }),
     });
 

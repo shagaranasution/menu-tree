@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsInt,
   IsOptional,
@@ -6,7 +6,7 @@ import {
   IsUUID,
   Min,
   MinLength,
-} from '@nestjs/class-validator';
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMenuDto {

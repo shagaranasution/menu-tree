@@ -6,9 +6,10 @@ import {
   Param,
   Put,
   Delete,
+  Patch,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
-import { CreateMenuDto } from './dto';
+import { CreateMenuDto, MoveMenuDto, ReorderMenuDto } from './dto';
 import { UpdateMenuDto } from './dto';
 import {
   ApiOperation,
@@ -49,7 +50,7 @@ export class MenuController {
 
   @Post()
   @ApiOperation({ summary: 'Create new menu item' })
-  @ApiResponse({ status: 201, description: 'Menu successfully created' })
+  @ApiResponse({ status: 201, description: 'Created' })
   @ApiCreatedResponse({
     description: 'Menu successfully created',
     type: MenuEntity,
@@ -63,7 +64,7 @@ export class MenuController {
   @ApiOperation({ summary: 'Update a menu item' })
   @ApiParam({ name: 'id', description: 'Menu ID (UUID)' })
   @ApiOkResponse({
-    description: 'Menu updated',
+    description: 'OK',
     type: MenuEntity,
   })
   @ApiBadRequestResponse({ description: 'Invalid update or cycle detected' })
@@ -72,10 +73,32 @@ export class MenuController {
     return this.svc.update(id, dto);
   }
 
+  @Patch(':id/move')
+  @ApiOperation({ summary: 'Move menu item to another parent' })
+  @ApiParam({ name: 'id', description: 'Menu ID (UUID)' })
+  @ApiOkResponse({
+    description: 'OK',
+    type: MenuEntity,
+  })
+  async move(@Param('id') id: string, @Body() dto: MoveMenuDto) {
+    return this.svc.move(id, dto);
+  }
+
+  @Patch(':id/reorder')
+  @ApiOperation({ summary: 'Reorder menu item within same parent' })
+  @ApiParam({ name: 'id', description: 'Menu ID (UUID)' })
+  @ApiOkResponse({
+    description: 'OK',
+    type: MenuEntity,
+  })
+  async reorder(@Param('id') id: string, @Body() dto: ReorderMenuDto) {
+    return this.svc.reorder(id, dto);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete menu item' })
   @ApiParam({ name: 'id', description: 'Menu ID (UUID)' })
-  @ApiOkResponse({ description: 'Menu deleted (success: true)' })
+  @ApiOkResponse({ description: 'OK' })
   @ApiBadRequestResponse({ description: 'Failed to delete menu' })
   async remove(@Param('id') id: string) {
     return this.svc.remove(id);
