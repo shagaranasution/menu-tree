@@ -4,7 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateMenuDto, UpdateMenuDto } from './dto';
+import {
+  CreateMenuDto,
+  MoveMenuDto,
+  ReorderMenuDto,
+  UpdateMenuDto,
+} from './dto';
 import type { MenuTree } from './menu.types';
 import { MenuEntity } from './menu.entity';
 
@@ -21,16 +26,35 @@ export class MenuService {
       if (!parent) throw new BadRequestException('Parent not found');
     }
 
-    const menu = this.prisma.menu.create({
-      data: {
-        title: dto.title,
-        description: dto.description ?? null,
-        parentId: dto.parentId ?? null,
-        order: dto.order ?? 0,
-      },
+    const siblings = await this.prisma.menu.findMany({
+      where: { parentId: dto.parentId ?? null },
+      orderBy: { order: 'asc' },
     });
 
-    return menu;
+    const hasUserProvidedOrder = dto.order !== undefined && dto.order !== null;
+    const finalOrder = hasUserProvidedOrder ? dto.order! : siblings.length;
+
+    return this.prisma.$transaction(async (tx) => {
+      // If user specifies order → shift siblings
+      if (hasUserProvidedOrder) {
+        await tx.menu.updateMany({
+          where: {
+            parentId: dto.parentId ?? null,
+            order: { gte: finalOrder },
+          },
+          data: { order: { increment: 1 } },
+        });
+      }
+
+      return tx.menu.create({
+        data: {
+          title: dto.title,
+          description: dto.description ?? null,
+          parentId: dto.parentId ?? null,
+          order: finalOrder,
+        },
+      });
+    });
   }
 
   async findOne(id: string): Promise<MenuEntity> {
@@ -43,7 +67,7 @@ export class MenuService {
 
   async findAllTree(): Promise<MenuEntity[]> {
     const items = await this.prisma.menu.findMany({
-      orderBy: [{ parentId: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ title: 'asc' }, { createdAt: 'asc' }],
     });
 
     return items;
@@ -105,6 +129,82 @@ export class MenuService {
     });
 
     return updated;
+  }
+
+  async move(id: string, dto: MoveMenuDto): Promise<MenuEntity> {
+    const item = await this.prisma.menu.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException('Menu not found');
+
+    // Check cycle
+    if (dto.parentId) {
+      const all = await this.prisma.menu.findMany();
+      const descendants = this.getDescendantIds(all, id);
+
+      if (descendants.includes(dto.parentId))
+        throw new BadRequestException('Cannot move menu into its own child');
+    }
+
+    const siblings = await this.prisma.menu.findMany({
+      where: { parentId: dto.parentId ?? null },
+    });
+
+    const newOrder = dto.order !== undefined ? dto.order : siblings.length;
+
+    return this.prisma.$transaction(async (tx) => {
+      // Shift siblings if inserting in middle
+      await tx.menu.updateMany({
+        where: {
+          parentId: dto.parentId ?? null,
+          order: { gte: newOrder },
+        },
+        data: { order: { increment: 1 } },
+      });
+
+      return tx.menu.update({
+        where: { id },
+        data: {
+          parentId: dto.parentId ?? null,
+          order: newOrder,
+        },
+      });
+    });
+  }
+
+  async reorder(id: string, dto: ReorderMenuDto): Promise<MenuEntity> {
+    const item = await this.prisma.menu.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException('Menu not found');
+
+    const oldOrder = item.order;
+    const newOrder = dto.order;
+
+    if (newOrder === oldOrder) return item;
+
+    return this.prisma.$transaction(async (tx) => {
+      if (newOrder < oldOrder) {
+        // Moved UP → shift items DOWN
+        await tx.menu.updateMany({
+          where: {
+            parentId: item.parentId,
+            order: { gte: newOrder, lt: oldOrder },
+          },
+          data: { order: { increment: 1 } },
+        });
+      } else {
+        // Moved DOWN → shift items UP
+        await tx.menu.updateMany({
+          where: {
+            parentId: item.parentId,
+            order: { gt: oldOrder, lte: newOrder },
+          },
+          data: { order: { decrement: 1 } },
+        });
+      }
+
+      return tx.menu.update({
+        where: { id },
+        data: { order: newOrder },
+      });
+    });
   }
 
   async remove(id: string) {

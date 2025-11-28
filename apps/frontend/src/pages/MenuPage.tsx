@@ -6,7 +6,13 @@ import AddMenuModal from '../components/AddMenuModal';
 import EditMenuModal from '../components/EditMenuModal';
 import SearchableSelect from '../components/SearchableSelect';
 import DeleteMenuConfirmModal from '../components/DeleteMenuConfirmModal';
-import { buildMenuSelectOption, buildTree } from '../utils';
+import {
+  buildMenuSelectOption,
+  buildTree,
+  collectAllIds,
+  computeInsertIndex,
+  findNodeAndParent,
+} from '../utils';
 
 import type { MenuItem } from '../types';
 import MenuDetailForm, {
@@ -22,7 +28,14 @@ const initialFormValue: MenuItem = {
 };
 
 export default function MenuPage() {
-  const { menus, loading, error, refetch: refreshMenus } = useMenus();
+  const {
+    menus,
+    loading,
+    error,
+    refetch: refreshMenus,
+    moveMenu,
+    reorderMenu,
+  } = useMenus();
   const menuTree = useMemo(() => buildTree(menus), [menus]);
 
   const [formValue, setFormValue] = useState<MenuItem>(initialFormValue);
@@ -56,7 +69,6 @@ export default function MenuPage() {
       body: JSON.stringify({
         title: data.title,
         parentId: data.parentId || parentMenu?.id,
-        order: 0,
       }),
     });
 
@@ -149,30 +161,126 @@ export default function MenuPage() {
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  function collectAllIds(menus: MenuItem[]): string[] {
-    const result: string[] = [];
+  const handleExpandable = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-    function walk(list: MenuItem[]) {
-      for (const item of list) {
-        result.push(item.id);
-        if (item.children?.length) walk(item.children);
-      }
-    }
-
-    walk(menus);
-    return result;
-  }
-
-  function expandAll(allMenuIds: string[]) {
+  const expandAll = (allMenuIds: string[]) => {
     setExpandedIds(new Set(allMenuIds));
-  }
+  };
 
-  function collapseAll() {
+  const collapseAll = () => {
     setExpandedIds(new Set());
-  }
+  };
+
+  const handleDrop = async ({
+    draggedId,
+    targetId,
+    position,
+  }: {
+    draggedId: string;
+    targetId: string;
+    position: 'inside' | 'before' | 'after';
+  }) => {
+    try {
+      if (draggedId === targetId) return;
+
+      // find dragged node and its parent
+      const { node: draggedNode, parent: draggedParent } = findNodeAndParent(
+        menuTree,
+        draggedId
+      );
+
+      const { node: targetNode, parent: targetParent } = findNodeAndParent(
+        menuTree,
+        targetId
+      );
+
+      if (!draggedNode || !targetNode) {
+        console.warn('Dragged or target node not found');
+        return;
+      }
+
+      // Prevent moving into own descendant (frontend guard)
+      // find all descendants of draggedNode
+      const collectDescendants = (parent: MenuItem): string[] => {
+        const out: string[] = [];
+
+        (function walk(menu: MenuItem) {
+          if (!menu.children) return;
+
+          for (const child of menu.children) {
+            out.push(child.id);
+
+            walk(child);
+          }
+        })(parent);
+
+        return out;
+      };
+
+      const draggedDescendants = collectDescendants(draggedNode);
+      if (draggedDescendants.includes(targetId)) {
+        alert('Cannot move an item into one of its own descendants.');
+        return;
+      }
+
+      // CASE A: dropped inside -> move as last child of target (or explicit order if you want)
+      if (position === 'inside') {
+        // move to target as parent, without specifying order (backend will append last)
+        await moveMenu(draggedId, { parentId: targetId, order: undefined });
+        return;
+      }
+
+      // CASE B: dropped before/after -> insert among target's siblings
+      // siblings are array of children from targetParent (parent of targetNode)
+      const siblings = targetParent ? targetParent.children ?? [] : menuTree;
+
+      const newIndex = computeInsertIndex(
+        siblings,
+        targetId,
+        position === 'before' ? 'before' : 'after'
+      );
+
+      // If moving within the same parent and original index < newIndex, newIndex should be decremented after removal of dragged node
+      let adjustedIndex = newIndex;
+
+      if ((draggedParent?.id ?? null) === (targetParent?.id ?? null)) {
+        // find index of dragged in siblings
+        const originalIndex = siblings.findIndex((s) => s.id === draggedId);
+        if (originalIndex === -1) {
+          // fallback: use reorder API directly
+          await reorderMenu(draggedId, newIndex);
+          return;
+        }
+        // If dragged originates before the insertion point and we remove it first, the insertion index shifts left by 1
+        if (originalIndex < newIndex) adjustedIndex = Math.max(0, newIndex - 1);
+      }
+
+      // If dropping into a different parent, call move with specified order so backend will insert at index and shift siblings
+      if ((draggedParent?.id ?? null) !== (targetParent?.id ?? null)) {
+        await moveMenu(draggedId, {
+          parentId: targetParent?.id ?? null,
+          order: adjustedIndex,
+        });
+        return;
+      }
+
+      // Same parent -> reorder
+      await reorderMenu(draggedId, adjustedIndex);
+    } catch (err) {
+      console.error('Drop error', err);
+      alert('Failed to perform move/reorder: ' + (err as Error).message);
+    }
+  };
 
   return (
-    <div className="w-full min-h-screen bg-white p-6 lg:p-10">
+    <div className="w-full min-h-screen bg-white p-6 md:p-10">
       {/* Breadcrumb */}
       <div className="text-sm text-gray-500 mb-4 flex items-center gap-2">
         <span>/</span>
@@ -193,9 +301,9 @@ export default function MenuPage() {
       </div>
 
       {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row gap-10">
+      <div className="flex flex-col md:flex-row gap-10">
         {/* Left: Tree Section */}
-        <div className="lg:w-1/2">
+        <div className="md:w-1/2">
           {/* Action Buttons */}
           <div className="flex items-center gap-4 mb-4">
             <button
@@ -222,24 +330,18 @@ export default function MenuPage() {
             <MenuTree
               data={menuTree}
               expandedIds={expandedIds}
-              onExpand={(id) => {
-                setExpandedIds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(id)) next.delete(id);
-                  else next.add(id);
-                  return next;
-                });
-              }}
+              onExpand={handleExpandable}
               onSelect={handleMenuSelect}
               onAddChild={handleAddChild}
               onEdit={handleEdit}
+              onDrop={handleDrop}
               onDelete={handleDelete}
             />
           )}
         </div>
 
         {/* Right: Form Section */}
-        <div className="lg:w-1/2">
+        <div className="md:w-1/2">
           <MenuDetailForm
             item={formValue}
             allMenus={menus}

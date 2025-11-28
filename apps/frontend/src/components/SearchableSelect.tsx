@@ -6,9 +6,10 @@ export type Option = {
   label: string;
 };
 
-type Props = {
+type SearchableSelectProps = {
   options: Option[];
   value?: string | null;
+  name?: string;
   onChange?: (value: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -19,12 +20,13 @@ type Props = {
 export default function SearchableSelect({
   options,
   value = null,
+  name,
   onChange,
   placeholder = 'Select menu...',
   disabled = false,
   className = '',
   renderOption,
-}: Props) {
+}: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -170,6 +172,7 @@ export default function SearchableSelect({
               ref={inputRef}
               type="text"
               value={query}
+              name={name}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setHighlightIndex(0);
