@@ -1,10 +1,4 @@
 services:
-  - type: database
-    name: menu-tree-pg
-    env: postgres
-    plan: free
-    region: singapore
-
   - type: web_service
     name: menu-tree-api
     env: node
@@ -38,3 +32,9 @@ services:
     envVars:
       - key: VITE_API_URL
         value: 'https://menu-tree-api.onrender.com'
+
+databases:
+  - name: menu-tree-pg
+    env: postgres
+    plan: free
+    region: singapore
