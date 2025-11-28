@@ -1,0 +1,40 @@
+services:
+  - type: database
+    name: menu-tree-pg
+    env: postgres
+    plan: free
+    region: singapore
+
+  - type: web_service
+    name: menu-tree-api
+    env: node
+    plan: free
+    region: singapore
+    repo: https://github.com/shagaranasution/menu-tree
+    branch: master
+    root: apps/backend
+    buildCommand: 'npm ci && npx prisma generate && npx prisma migrate deploy && npm run build'
+    startCommand: 'npm run start:prod'
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: menu-tree-pg
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: https://menu-tree.onrender.com
+
+  - type: static_site
+    name: menu-tree
+    env: node
+    plan: free
+    region: singapore
+    repo: https://github.com/shagaranasution/menu-tree
+    branch: master
+    root: apps/frontend
+    buildCommand: 'npm ci && npm run build'
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: 'https://menu-tree-api.onrender.com'

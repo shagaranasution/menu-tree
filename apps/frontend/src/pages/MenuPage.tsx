@@ -13,6 +13,8 @@ import MenuDetailForm, {
   type OnFormChangeParams,
 } from '../components/MenuDetailForm';
 
+const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
 const initialFormValue: MenuItem = {
   id: '',
   parentId: '',
@@ -48,7 +50,7 @@ export default function MenuPage() {
   };
 
   const handleSubmitCreation = async (data: Omit<MenuItem, 'id'>) => {
-    await fetch('/api/menus', {
+    await fetch(`${baseUrl}/api/menus`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -78,7 +80,7 @@ export default function MenuPage() {
 
     if (!id) return;
 
-    await fetch(`/api/menus/${id}`, {
+    await fetch(`${baseUrl}/api/menus/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -96,7 +98,7 @@ export default function MenuPage() {
   const confirmDelete = async () => {
     if (!deleteItem) return;
 
-    await fetch(`/api/menus/${deleteItem.id}`, {
+    await fetch(`${baseUrl}/api/menus/${deleteItem.id}`, {
       method: 'DELETE',
     });
 
@@ -136,7 +138,7 @@ export default function MenuPage() {
   };
 
   const fethMenuById = async (id: string): Promise<MenuItem> => {
-    const res = await fetch(`/api/menus/${id}`);
+    const res = await fetch(`${baseUrl}/api/menus/${id}`);
 
     if (!res.ok) throw new Error('Fail to fetch menu data');
 
